@@ -28,7 +28,7 @@
                 <span class="mr-1">
                     Copyright © 2021-2024 顺德中专团委学生会媒体部 版权所有
                     <span class="changelogEntrance">
-                        <a href="https://github.com/wesley-0808/MTB-SSO" target="__blank">仓库地址</a>
+                        <a href="https://github.com/Wesley-Work/MTB-SSO" target="__blank">仓库地址</a>
                     </span>
                     <span class="changelogEntrance" @click="goToChangelog">更新日志</span>
                 </span>
