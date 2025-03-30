@@ -16,14 +16,6 @@ const routes = [
     children: [...routercfg],
   },
   {
-    path: '/CHANGELOG',
-    component: () => import('./pages/CHANGELOG.vue')
-  },
-  {
-    path: '/changelog',
-    component: () => import('./pages/CHANGELOG.vue')
-  },
-  {
     path: '/:w+',
     redirect: '/',
   },
