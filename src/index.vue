@@ -2,25 +2,14 @@
     <svgList />
     <div id="page" class="page page-cn page-pc page-banner page-wrapper-full">
         <BackgroundImage />
-        <router-view v-slot="{ Component, route }">
-            <!-- <transition name="fade"> -->
-            
-            <!-- </transition> -->
-            <div class="wrapper" v-if="!['/CHANGELOG','/changelog'].includes(route.path)">
+        <router-view v-slot="{ Component }">
+            <div class="wrapper">
                 <div class="container" style="padding-bottom: 36px">
                     <!---->
                     <component :is="Component" :param="param" :login="already_login" :username="username" :userInfo="userInfo"/>
                     <!---->
                 </div>
             </div>
-            <!---->
-            <div class="transparentContainer" v-else>
-                <div class="BackToIndex" @click="() => $router.push('/')">返回登录页</div>
-                <div class="innerHolder">
-                    <component :is="Component" :param="param" :login="already_login" :username="username" :userInfo="userInfo"/>
-                </div>
-            </div>
-            <!---->
         </router-view>
         <!---->
         <footer class="mtb-footer text-center" style="opacity: 1">
@@ -28,9 +17,11 @@
                 <span class="mr-1">
                     Copyright © 2021-2024 顺德中专团委学生会媒体部 版权所有
                     <span class="changelogEntrance">
-                        <a href="https://github.com/wesley-0808/MTB-SSO" target="__blank">仓库地址</a>
+                        <a href="https://github.com/Wesley-Work/MTB-SSO" target="__blank">仓库地址</a>
                     </span>
-                    <span class="changelogEntrance" @click="goToChangelog">更新日志</span>
+                    <span class="changelogEntrance">
+                        <a href="https://github.com/Wesley-Work/MTB-SSO/blob/develop/CHANGELOG.md" target="__blank">更新日志</a>
+                    </span>
                 </span>
             </div>
         </footer>
@@ -50,7 +41,6 @@ const already_login = ref(false);
 const param = ref({});
 const username = ref("");
 const userInfo = ref({})
-const diyPages = ref(["/CHANGELOG","/changelog"].includes(window.location.href))
 const route = useRoute()
 const router = useRouter()
 
@@ -188,10 +178,6 @@ const getQueryVariableBySearch = (variable:string) => {
       }
     }
     return object[variable];
-}
-
-const goToChangelog = () => {
-    router.push("/CHANGELOG")
 }
 
 onBeforeMount(() => {
