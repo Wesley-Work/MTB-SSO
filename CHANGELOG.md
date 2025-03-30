@@ -1,4 +1,7 @@
 
+## 🌈 2.0.3 `2025-03-30` 
+### 🚧 Others
+- `chore`: 更新仓库地址 @Wesley-0808 ([#9](https://github.com/Wesley-Work/MTB-SSO/pull/9))
 ## 🌈 2.0.2 `2025-01-30`
 ### 🚀 Features
 - `Login`: 支持使用微信小程序登录，支持解绑 @Wesley-0808 ([#2](https://github.com/Wesley-Work/MTB-SSO/pull/2))
