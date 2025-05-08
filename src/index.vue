@@ -90,10 +90,13 @@ const loadParam = () => {
     // 特定页面下，如果没有actionType参数，则加上actionType=login并刷新页面
     const actionTypeLowerCase = param.value.actionType;
     const needPushPage = ['/', '/login'];
+    const paramsData = {
+      ...route.query,
+      ...getURLParams(),
+    } as { [x: string]: string };
     if (!actionTypeLowerCase && needPushPage.includes(route.path)) {
       const newParams = {
-        ...route.query,
-        ...getURLParams(),
+        ...paramsData,
         actionType: 'login',
       };
       location.replace('/#/login?' + new URLSearchParams(newParams).toString());
@@ -102,6 +105,10 @@ const loadParam = () => {
     // 登出
     if (actionTypeLowerCase === 'logout') {
       logout();
+    }
+    // 改密码
+    if (actionTypeLowerCase === 'changepassword') {
+      location.replace('/#/change-password?' + new URLSearchParams(paramsData).toString());
     }
   });
 };
