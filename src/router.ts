@@ -11,6 +11,10 @@ const routercfg: RouteRecordRaw[] = [
     path: '/networkPortal',
     component: () => import('./pages/networkPortal.vue'),
   },
+  {
+    path: '/change-bind-device',
+    component: () => import('./pages/modifyInternetBindDevice.vue'),
+  },
 ];
 
 const routes = [

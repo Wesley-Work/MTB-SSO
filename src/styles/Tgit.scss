@@ -80,7 +80,6 @@ html body {
   position: relative;
 }
 
-
 .sso-container:after,
 .sso-container:before {
   content: ' ';
@@ -92,6 +91,7 @@ html body {
 }
 
 .sso-container {
+  height: 100%;
   min-height: 100%;
   margin-right: auto;
   margin-left: auto;
@@ -115,7 +115,6 @@ html body {
     width: 1170px;
   }
 }
-
 
 .prepend-top-20 {
   margin-top: 20px;
@@ -151,10 +150,20 @@ html body {
     font: var(--td-font-body-medium);
   }
 }
+.t-link--theme-primary {
+  color: #0052d9;
+  &.t-link--hover-underline::after {
+    border-bottom: 1px solid #0052d9;
+  }
+}
 
 .session-container {
   .form-provider {
     min-height: 252px;
+
+    .t-form__item {
+      margin-bottom: var(--td-comp-margin-m);
+    }
 
     .t-form-item__password {
       .t-input__extra {
@@ -169,6 +178,10 @@ html body {
       width: auto;
       z-index: 2;
       font-size: 14px;
+    }
+
+    .t-form__controls-content:has(.t-input__suffix) + .t-input__extra {
+      right: 30px;
     }
 
     .sign-in-action__container {
@@ -295,8 +308,6 @@ html body {
   }
 }
 
-
-
 .note-image-attach,
 .thumbnail {
   display: block;
@@ -340,7 +351,7 @@ a.thumbnail:hover {
 .flash-container .flash-notice,
 .message-tips {
   padding: 15px;
-  margin-bottom: 20px;
+  // margin-bottom: 20px;
   border: 1px solid transparent;
   border-radius: 0;
 }

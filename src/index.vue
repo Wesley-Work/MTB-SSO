@@ -107,8 +107,12 @@ const loadParam = () => {
       logout();
     }
     // 改密码
-    if (actionTypeLowerCase === 'changepassword') {
+    if (actionTypeLowerCase === 'change-password') {
       location.replace('/#/change-password?' + new URLSearchParams(paramsData).toString());
+    }
+    // 改上网设备
+    if (actionTypeLowerCase === 'change-bind-device') {
+      location.replace('/#/change-bind-device?' + new URLSearchParams(paramsData).toString());
     }
   });
 };
@@ -198,8 +202,6 @@ export default {
 </script>
 
 <style lang="scss">
-@import './styles/Tgit.scss';
-
 .copyright {
   display: flex;
   flex-direction: column;

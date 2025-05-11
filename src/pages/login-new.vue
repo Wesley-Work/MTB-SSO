@@ -141,7 +141,9 @@
                 <div class="header">
                   <div class="sign-in-tab">
                     <ul class="account-sign-in">
-                      <li data-type="account" style="margin-bottom: 2px">Hi，{{ props.userName ?? '' }}，你好 👋！</li>
+                      <li data-type="account" style="margin-bottom: 2px">
+                        Hi，{{ props.userName ?? '' }}，{{ judgmentTime() }}好 👋！
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -160,22 +162,24 @@
                     <!---->
                     <div>
                       <t-button theme="primary" size="large" block @click="toOA">
-                        {{ isNetworkPortal ? '点击认证上网' : '进入媒体部管理系统' }}
+                        {{ isNetworkPortal ? '绑定并认证上网' : '进入媒体部管理系统' }}
                       </t-button>
-                    </div>
-                    <!---->
-                    <div style="display: none">
-                      <t-button theme="primary" size="large" block> 修改上网绑定设备 </t-button>
                     </div>
                     <!---->
                     <div>
                       <t-button
-                        theme="success"
+                        theme="primary"
                         size="large"
                         block
-                        variant="outline"
-                        @click="MessagePlugin.info('功能正在维护中...')"
+                        variant="dashed"
+                        @click="router.push('change-bind-device')"
                       >
+                        修改上网绑定设备
+                      </t-button>
+                    </div>
+                    <!---->
+                    <div>
+                      <t-button theme="success" size="large" block @click="MessagePlugin.info('功能正在维护中...')">
                         绑定微信
                       </t-button>
                     </div>
@@ -225,6 +229,7 @@ import { DesktopIcon, LockOnIcon, ScanIcon, Fingerprint3Icon } from 'tdesign-ico
 import { api, jump_defaultURL } from '../config';
 import type { LoginFormErrorStatus } from '../types';
 import { logout } from '../utils';
+import { judgmentTime } from '../utils/time';
 
 const props = defineProps(componentProps);
 const propsRef = ref(props);
