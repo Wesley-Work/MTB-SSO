@@ -226,7 +226,7 @@ import { componentProps } from '../props';
 import { MessagePlugin } from 'tdesign-vue-next';
 import type { FormProps } from 'tdesign-vue-next';
 import { DesktopIcon, LockOnIcon, ScanIcon, Fingerprint3Icon } from 'tdesign-icons-vue-next';
-import { api, jump_defaultURL } from '../config';
+import { api, jump_defaultURL, networkPortalApi } from '../config';
 import type { LoginFormErrorStatus } from '../types';
 import { logout } from '../utils';
 import { judgmentTime } from '../utils/time';
@@ -448,7 +448,8 @@ const returnSourceSystem = (URL: string | null, TOKEN: string, CODE: string, NAM
  * @param onceVerify 是否为单次认证，false则会添加绑定，true则不会添加绑定
  */
 const networkPortalVerify = (token: string, user_ip: string, mac: string, timestamp: string, onceVerify = false) => {
-  fetch(api + '/network-portal', {
+  // 上网认证服务端必须和路由在一起。。。。
+  fetch(networkPortalApi + '/network-portal', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -460,6 +461,9 @@ const networkPortalVerify = (token: string, user_ip: string, mac: string, timest
     .then((result) => {
       if (result.errcode != 0) {
         MessagePlugin.error('认证失败，因为：' + result.errmsg);
+        setTimeout(() => {
+          location.reload();
+        }, 2500);
         return;
       }
     });
