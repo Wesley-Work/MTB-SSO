@@ -78,9 +78,9 @@
                               {{ isNetworkPortal ? '登录并认证' : '登录' }}
                             </t-button>
                           </div>
-                          <div style="min-width: 110px; display: none">
-                            <t-button theme="primary" type="submit" size="large" variant="outline" block>
-                              登录
+                          <div v-if="isNetworkPortal" style="min-width: 110px">
+                            <t-button theme="primary" size="large" variant="outline" block @click="toGuestVerify">
+                              访客(非部门人员)认证
                             </t-button>
                           </div>
                         </div>
@@ -219,11 +219,11 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { componentProps } from '../props';
-import { MessagePlugin } from 'tdesign-vue-next';
+import { Button, DialogPlugin, MessagePlugin, Space } from 'tdesign-vue-next';
 import type { FormProps } from 'tdesign-vue-next';
 import { DesktopIcon, LockOnIcon, ScanIcon, Fingerprint3Icon } from 'tdesign-icons-vue-next';
 import { api, jump_defaultURL, networkPortalApi } from '../config';
@@ -305,12 +305,12 @@ const setFormErrorStatus = (ex: string, status: LoginFormErrorStatus['both']['st
 
 const toOA = () => {
   const token = localStorage.getItem('token') ?? '';
-  MessagePlugin.success('请稍后...');
   // 上网认证
   if (props.param.actionType === 'networkportal') {
     const { timestamp, mac, user_ip } = route.query as { [k: string]: string };
     networkPortalVerify(token, user_ip, mac, timestamp);
   } else {
+    MessagePlugin.success('请稍后...');
     setTimeout(() => {
       returnSourceSystem(
         props.param.backUrl ?? jump_defaultURL,
@@ -320,6 +320,15 @@ const toOA = () => {
       );
     }, 1500);
   }
+};
+
+const toGuestVerify = () => {
+  router.push({
+    path: '/guest-verify',
+    query: {
+      ...route.query,
+    },
+  });
 };
 
 /**
@@ -362,6 +371,7 @@ const login = () => {
             setTimeout(() => {
               returnSourceSystem(props.param.backUrl, result.data.token, userData.usercode, userData.name);
             }, 1500);
+            return;
           }
           // 上网认证
           else if (props.param.actionType === 'networkportal') {
@@ -370,11 +380,11 @@ const login = () => {
           }
           // 默认刷新
           else {
-            MessagePlugin.success('登录成功');
             setTimeout(() => {
               location.reload();
             }, 1500);
           }
+          MessagePlugin.success('登录成功');
         } else if (result.errcode == -20001) {
           MessagePlugin.error('账户或密码错误');
           errorStatus.both.status = 'error';
@@ -448,24 +458,89 @@ const returnSourceSystem = (URL: string | null, TOKEN: string, CODE: string, NAM
  * @param onceVerify 是否为单次认证，false则会添加绑定，true则不会添加绑定
  */
 const networkPortalVerify = (token: string, user_ip: string, mac: string, timestamp: string, onceVerify = false) => {
+  const loading = MessagePlugin.loading('认证中...', 0);
   // 上网认证服务端必须和路由在一起。。。。
-  fetch(networkPortalApi + '/network-portal', {
+  fetch(networkPortalApi + '/verify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       token: token,
     },
-    body: '?ip=' + user_ip + '&mac=' + mac + '&timestamp=' + timestamp + '&onceVerify=' + onceVerify,
+    body: 'ip=' + user_ip + '&mac=' + mac + '&timestamp=' + timestamp + '&onceVerify=' + onceVerify,
   })
     .then((res) => res.json())
     .then((result) => {
       if (result.errcode != 0) {
         MessagePlugin.error('认证失败，因为：' + result.errmsg);
-        setTimeout(() => {
-          location.reload();
-        }, 2500);
+        // 设备超出限制
+        // if (result.errcode == -8951) {
+        const Dialog = DialogPlugin.confirm({
+          header: '上网认证失败',
+          body: () => {
+            return (
+              <div>
+                <div style="margin-bottom: 12px;">
+                  您的绑定设备已超出您个人设备数量限制限制，您可以尝试通过以下方案完成上网认证。
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span>1. 移除一个已绑定设备后再次尝试认证</span>
+                  <span>2. 使用上网码（找技术拿）或发起上网审批（审批需要部长和技术在OA中操作通过）</span>
+                  <span>3. 联系部门IT处理</span>
+                </div>
+              </div>
+            );
+          },
+          width: 640,
+          confirmBtn: () => {
+            return (
+              <Space size="small" style="margin-left: 8px;">
+                <Button
+                  theme="primary"
+                  variant="dashed"
+                  onClick={() => {
+                    Dialog.destroy();
+                    router.push('change-bind-device');
+                  }}
+                >
+                  编辑绑定设备
+                </Button>
+                <Button
+                  theme="primary"
+                  variant="outline"
+                  onClick={() => {
+                    Dialog.destroy();
+                    toGuestVerify();
+                  }}
+                >
+                  使用上网码
+                </Button>
+                <Button
+                  theme="primary"
+                  onClick={() => MessagePlugin.info('正在加速开发中！请使用其他方式完成上网认证！')}
+                >
+                  发起审批
+                </Button>
+              </Space>
+            );
+          },
+          cancelBtn: '取消认证',
+          onConfirm: () => {},
+          onClose: () => {
+            Dialog.destroy();
+          },
+        });
+        // }
+        // setTimeout(() => {
+        //   location.reload();
+        // }, 2500);
         return;
       }
+    })
+    .catch((error) => {
+      MessagePlugin.error('无法认证，因为：' + error);
+    })
+    .finally(() => {
+      MessagePlugin.close(loading);
     });
 };
 
@@ -474,7 +549,7 @@ const handleToScanLogin = () => {
 };
 </script>
 
-<script lang="ts">
+<script lang="tsx">
 export default {
   name: 'NewLogin',
 };

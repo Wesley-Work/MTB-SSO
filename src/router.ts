@@ -15,6 +15,10 @@ const routercfg: RouteRecordRaw[] = [
     path: '/change-bind-device',
     component: () => import('./pages/modifyInternetBindDevice.vue'),
   },
+  {
+    path: '/guest-verify',
+    component: () => import('./pages/guest-verify.vue'),
+  },
 ];
 
 const routes = [
