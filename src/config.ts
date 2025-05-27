@@ -4,11 +4,9 @@ const config = {
   jump_login: false,
   skipLoginCheck: false,
   apiHost: 'https://sso-api.mtb.wesley.net.cn/',
-  // apiHost: 'http://localhost:50001/',
   oaApi: 'https://oa-api.mtb.wesley.net.cn/v2',
   api: 'https://sso-api.mtb.wesley.net.cn/v2/OAuth',
-  networkPortalApi: 'http://localhost:50001/networkPortal',
-  // networkPortalApi: 'http://192.168.67.14:50001/networkPortal',
+  networkPortalApi: 'http://192.168.67.14:50001/networkPortal',
   wxApi: 'https://sso-api.mtb.wesley.net.cn/v2/WxAuth',
   jump_defaultURL: 'https://oa-mtb.wesley.net.cn/',
 };
