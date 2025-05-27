@@ -121,7 +121,12 @@ const formRule: FormProps['rules'] = {
 };
 
 const backIndex = () => {
-  router.replace('/login');
+  router.replace({
+    path: '/login',
+    query: {
+      ...route.query,
+    },
+  });
 };
 
 // 上网认证-验证参数是否完整
