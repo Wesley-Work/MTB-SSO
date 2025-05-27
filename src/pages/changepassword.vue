@@ -317,11 +317,12 @@ onMounted(() => {
           } else {
             localStorage.setItem('loginStatus', 'false');
             state.value = '验证失败，请重新登录';
+            checkOk.value = false;
           }
         } else {
           localStorage.setItem('loginStatus', 'false');
+          checkOk.value = false;
         }
-        checkOk.value = false;
         checking.value = false;
       };
       xhr.onerror = () => {
