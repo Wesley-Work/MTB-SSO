@@ -1,4 +1,10 @@
 
+## 🌈 3.0.0 `2025-05-27` 
+### 🚀 Features
+- `Login`: 新的认证、登录界面 @Wesley-0808 ([#11](https://github.com/Wesley-Work/MTB-SSO/pull/11))
+- `SSO`: `v3` @Wesley-0808 ([#11](https://github.com/Wesley-Work/MTB-SSO/pull/11))
+### 🚧 Others
+- `chore`: 优化项目 @Wesley-0808 ([#11](https://github.com/Wesley-Work/MTB-SSO/pull/11))
 ## 🌈 2.0.3 `2025-03-30` 
 ### 🚧 Others
 - `chore`: 更新仓库地址 @Wesley-0808 ([#9](https://github.com/Wesley-Work/MTB-SSO/pull/9))
