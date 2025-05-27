@@ -1,207 +1,244 @@
 <template>
-    <svgList />
-    <div id="page" class="page page-cn page-pc page-banner page-wrapper-full">
-        <BackgroundImage />
-        <router-view v-slot="{ Component }">
-            <div class="wrapper">
-                <div class="container" style="padding-bottom: 36px">
-                    <!---->
-                    <component :is="Component" :param="param" :login="already_login" :username="username" :userInfo="userInfo"/>
-                    <!---->
-                </div>
-            </div>
-        </router-view>
-        <!---->
-        <footer class="mtb-footer text-center" style="opacity: 1">
-            <div class="mtb-footer-copyright">
-                <span class="mr-1">
-                    Copyright © 2021-2024 顺德中专团委学生会媒体部 版权所有
-                    <span class="changelogEntrance">
-                        <a href="https://github.com/Wesley-Work/MTB-SSO" target="__blank">仓库地址</a>
-                    </span>
-                    <span class="changelogEntrance">
-                        <a href="https://github.com/Wesley-Work/MTB-SSO/blob/develop/CHANGELOG.md" target="__blank">更新日志</a>
-                    </span>
-                </span>
-            </div>
-        </footer>
+  <svgList />
+  <router-view v-slot="{ Component }">
+    <div class="bg normal-bg">
+      <div class="bg-image" :style="`background-image: url(${bg})`"></div>
     </div>
+    <div class="bg normal-container">
+      <div class="sso-container navless-container">
+        <component
+          :is="Component"
+          :param="param"
+          :already-login="alreadyLogin"
+          :user-name="username"
+          :user-info="userInfo"
+        />
+        <footer>
+          <div class="copyright">
+            <div>Copyright © 2025 顺德中专团委学生会媒体部 All Rights Reserved.</div>
+            <span> Designed by Tencent Inc. </span>
+            <div>
+              <span> Powered by Wesley </span>
+              <span class="copyright-link">
+                <a href="https://github.com/Wesley-Work/MTB-SSO" target="__blank">仓库地址</a>
+              </span>
+              <span class="copyright-link">
+                <a href="https://github.com/Wesley-Work/MTB-SSO/blob/develop/CHANGELOG.md" target="__blank">更新日志</a>
+              </span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </router-view>
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, onMounted, ref } from "vue";
-import BackgroundImage from "./components/backgroundImage.vue";
-import svgList from "./components/svg.vue";
-import config from "./config";
-import { useRoute, useRouter } from 'vue-router'
-import { MessagePlugin } from "tdesign-vue-next";
-import { logout } from "./components/hooks.ts";
+import bg from './assets/TencentCode-Background.png';
+import { computed, onBeforeMount, onMounted, ref } from 'vue';
+import svgList from './components/svg.vue';
+import { api, skipLoginCheck } from './config.ts';
+import { useRoute, useRouter } from 'vue-router';
+import { getURLParams, logout } from './utils.ts';
+import { MessagePlugin } from 'tdesign-vue-next';
 
-const already_login = ref(false);
-const param = ref({});
-const username = ref("");
-const userInfo = ref({})
-const route = useRoute()
-const router = useRouter()
-
-const getQueryVariable = () => {
-    const key = Object.keys(route.query)
-    let dataList:{[key:string]:string} = {}
-    // 每项只取一个值
-    for (const i of key) {
-        dataList[i] = typeof route.query[i] === "string" ? route.query[i] : (route.query[i] as Array<string>)[0]
-    }
-    return dataList
-}
+const alreadyLogin = ref(false);
+const param = computed(() => {
+  // router参数
+  const {
+    backUrl: routerBackUrl,
+    strongAuth: routerStrongAuth,
+    actionType: routerActionType,
+    loginType: routerLoginType,
+  } = route.query as {
+    [key: string]: string;
+  };
+  // 原始url参数
+  const {
+    backUrl: linkBackUrl,
+    strongAuth: linkStrongAuth,
+    actionType: linkActionType,
+    loginType: linkLoginType,
+  } = getURLParams() as { [key: string]: string };
+  const backUrl = routerBackUrl ?? linkBackUrl ?? undefined;
+  const strongAuth = routerStrongAuth ?? linkStrongAuth ?? false;
+  const actionType = routerActionType ?? linkActionType ?? undefined;
+  const loginType = routerLoginType ?? linkLoginType ?? 'account';
+  // actionType大小写不敏感
+  const actionTypeLowerCase = actionType?.toLowerCase();
+  return {
+    backUrl: backUrl,
+    strongAuth: strongAuth,
+    actionType: actionTypeLowerCase,
+    loginType: loginType,
+  };
+});
+const username = ref('');
+const userInfo = ref({});
+const route = useRoute();
+const router = useRouter();
 
 const loadParam = () => {
-    // 获取url参数
-    router.isReady().then(() => {
-        const { backUrl=getQueryVariableBySearch("backUrl"), strongAuth, actionType=getQueryVariableBySearch("login"), loginType="account" } = getQueryVariable()
-        var params = {
-            backUrl: backUrl,
-            strongAuth: strongAuth,
-            actionType: actionType,
-            loginType: loginType,
-        };
-        param.value = params;
-        console.log(route)
-        // 如果无actionType参数，则刷新页面并加上actionType=Login
-        if (!actionType) {
-            if (window.location.href.indexOf("?") == -1) {
-                window.location.href = window.location.href + "?actionType=login";
-            }
-            else {
-                window.location.href = window.location.href + "&actionType=login";
-            }
-        }
-        console.log("backUrl: "+backUrl)
-        console.log("actionType: "+actionType)
-        if (actionType === "logout") {
-            logout()
-        }
-    })
-}
+  // 获取url参数
+  router.isReady().then(() => {
+    /**
+     * backUrl: 登录后跳转的页面
+     * strongAuth: 是否强验证
+     * actionType: 登录类型，login为登录，logout为登出，NetworkPortal为上网验证
+     * loginType: 登录方式，account为账号密码登录，ticket为Ticket登录
+     */
+    // 特定页面下，如果没有actionType参数，则加上actionType=login并刷新页面
+    const actionTypeLowerCase = param.value.actionType;
+    const needPushPage = ['/', '/login'];
+    const paramsData = {
+      ...route.query,
+      ...getURLParams(),
+    } as { [x: string]: string };
+    if (!actionTypeLowerCase && needPushPage.includes(route.path)) {
+      const newParams = {
+        ...paramsData,
+        actionType: 'login',
+      };
+      location.replace('/#/login?' + new URLSearchParams(newParams).toString());
+      // location.reload();
+    }
+    // 登出
+    if (actionTypeLowerCase === 'logout') {
+      logout();
+    }
+    // 改密码
+    if (actionTypeLowerCase === 'change-password') {
+      location.replace('/#/change-password?' + new URLSearchParams(paramsData).toString());
+    }
+    // 改上网设备
+    if (actionTypeLowerCase === 'change-bind-device') {
+      location.replace('/#/change-bind-device?' + new URLSearchParams(paramsData).toString());
+    }
+  });
+};
 
 const init = () => {
-    // 初始化一些内容
-    already_login.value = false;
-    if (!config.skip_login_check) {
-        // 判断是否登录
-        var loginstate = localStorage.getItem("loginstate");
-        if (loginstate != "true") {
-            return;
+  const cleanStatus = () => {
+    localStorage.removeItem('loginStatus');
+    localStorage.removeItem('token');
+  };
+  // 初始化状态
+  alreadyLogin.value = false;
+  if (!skipLoginCheck) {
+    // 判断是否登录
+    var loginStatus = localStorage.getItem('loginStatus');
+    var token = localStorage.getItem('token');
+    if (loginStatus != 'true') {
+      return;
+    }
+    console.info('检测到了登录态，将判断登录是否有效。');
+    fetch(api + '/checkToken', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        token: token ?? '',
+      },
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.errcode != 0 || !result?.data?.verify) {
+          // 登录态无效
+          cleanStatus();
+          return;
         }
-        console.log("检测到了登录态信息，正在判断登录态是否有效。");
-        var token = localStorage.getItem("token") as string
-        fetch(config.api + "/checkToken",{
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                token: token
-            }
-        })
-        .then( res => res.json() )
-        .then((result) => {
-            if (result.errcode == 0) {
-                if (!result.data.verify) {
-                    localStorage.removeItem("loginstate");
-                    localStorage.removeItem("token");
-                    return;
-                }
-                // 获取用户名称
-                fetch(config.api + "/getLoginUserInfo",{
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                        token: token
-                    }
-                })
-                .then( res => res.json() )
-                .then((result) => {
-                    if (result.errcode == 0) {
-                        already_login.value = true;
-                        username.value = result.data.name;
-                        userInfo.value = result.data;
-                    } else {
-                        // 获取用户名称出错了
-                        already_login.value = false;
-                        console.error("获取用户名称出错了");
-                        username.value = "请求出错";
-                    }
-                })
-                .catch((err) => {
-                    already_login.value = false;
-                    console.log("请求错误", err);
-                    username.value = "请求出错";
-                })
-            } else {
-                // 登录失效
-                localStorage.removeItem("loginstate");
-                localStorage.removeItem("token");
-            }
-        })
-        .catch((err) => {
-            console.error("请求错误:",err)
-        })
-    }
-}
+        // 获取用户信息
+        getUserInfo();
+      })
+      .catch((err) => {
+        console.error('请求错误:', err);
+      });
+  }
+};
 
-/**
- * @getQueryVariable
- * @desc 获取参数
- * @param id 参数名
- */
-const getQueryVariableBySearch = (variable:string) => {
-    // var query = window.location.hash.substring(1);
-    // var vars = query.split("&");
-    // for (var i = 0; i < vars.length; i++) {
-    //     var pair = vars[i].split("=");
-    //     if (pair[0] == variable) {
-    //         var res_str = pair[1]
-    //             .replaceAll("%3F", "?")
-    //             .replaceAll("%3D", "=")
-    //             .replaceAll("%26", "&");
-    //         return res_str;
-    //     }
-    // }
-    // return false;
-    //url例子：www.baidu.com?id="123456"&name="www"；  
-    var url = decodeURI(window.location.search); //?id="123456"&name="www";
-    var object:{[key:string]: string} = {};
-    if (url.indexOf("?") != -1)//url中存在问号，也就说有参数。  
-    {
-      var str = url.substring(1);  //得到?后面的字符串
-      var strs = str.split("&");  //将得到的参数分隔成数组[id="123456",name="www"];
-      for (var i = 0; i < strs.length; i++) {
-        object[strs[i].split("=")[0]] = strs[i].split("=")[1];//得到{id:'123456',name:'www'}
+const getUserInfo = () => {
+  var token = localStorage.getItem('token');
+  fetch(api + '/getLoginUserInfo', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      token: token ?? '',
+    },
+  })
+    .then((res) => res.json())
+    .then((result) => {
+      if (result.errcode == 0) {
+        alreadyLogin.value = true;
+        username.value = result.data.name;
+        userInfo.value = result.data;
+      } else {
+        // 获取用户名称出错了
+        alreadyLogin.value = false;
+        console.error('获取用户名称出错了');
+        username.value = '请求出错';
+        MessagePlugin.error('获取用户名称出错了');
       }
-    }
-    return object[variable];
-}
+    })
+    .catch((err) => {
+      alreadyLogin.value = false;
+      console.error('请求错误', err);
+      username.value = '请求出错';
+      MessagePlugin.error('获取用户名称出错了');
+    });
+};
 
 onBeforeMount(() => {
-    loadParam()
-})
+  loadParam();
+});
 
 onMounted(() => {
-    init()
-})
-
-
-
-
+  init();
+});
 </script>
 
 <script lang="ts">
 export default {
-    name: "mtbSSO",
+  name: 'MtbSSO',
 };
 </script>
 
-<style>
+<style lang="scss">
+.copyright {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .copyright-link {
+    margin-left: 4px;
+    cursor: pointer;
+    position: relative;
+    & a {
+      color: #fff;
+      text-decoration: none;
+      &:hover {
+        text-decoration: none !important;
+      }
+    }
+    &::after {
+      content: ' ';
+      height: 1.25px;
+      background-color: #f5f5f5;
+      width: 0px;
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transition: 0.28s width cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translate(-50%, 0);
+    }
+    &:hover {
+      &::after {
+        width: 100%;
+      }
+    }
+  }
+}
+
 .--we-tag-black.t-avatar {
-    color: #fff;
-    background: #979797;
+  color: #fff;
+  background: #979797;
 }
 </style>
