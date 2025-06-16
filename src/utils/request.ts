@@ -8,16 +8,16 @@ interface RequestHooksOptions {
   data?: object | string;
   useCustomURL?: boolean;
   timeout?: number;
-  success?: Function;
+  success?: (res: RequestResponseData) => void;
   error?: Function;
   complete?: Function;
 }
 
-interface RequestResponseData {
+type RequestResponseData = {
   errcode: number | string;
   errmsg: string;
   data?: string | Array<any> | object | null;
-}
+};
 
 function SpliceParameter(DATA: Object) {
   if (Object.prototype.toString.call(DATA) !== '[object Object]') return false;
@@ -76,12 +76,7 @@ export function useRequest(option: RequestHooksOptions) {
         resolve(false);
         return;
       }
-      const token = localStorage.getItem('token');
-      if (!token) {
-        emitError('token不存在', null);
-        resolve(false);
-        return;
-      }
+      const token = localStorage.getItem('token') ?? '';
       // fetch 请求
       await fetch(option?.useCustomURL ? option?.url : `${api}${option?.url}`, {
         method: option?.methods ? option?.methods.toUpperCase() : 'GET',
