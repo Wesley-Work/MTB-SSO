@@ -1,11 +1,15 @@
-import { defineComponent } from 'vue';
+import { defineComponent, toRefs } from 'vue';
 import MiniprogramCode from './miniprogramCode';
+import { componentProps } from '../../../props';
 
 export default defineComponent({
   name: 'LoginScan',
-  setup() {
+  props: {
+    ...componentProps,
+  },
+  setup(props) {
     return () => {
-      return <MiniprogramCode type="login" />;
+      return <MiniprogramCode type="login" {...props} />;
     };
   },
 });

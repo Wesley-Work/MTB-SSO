@@ -12,6 +12,7 @@
           :already-login="alreadyLogin"
           :user-name="username"
           :user-info="userInfo"
+          :bind-wechat="bindWechat"
         />
         <footer>
           <div class="copyright">
@@ -74,6 +75,7 @@ const param = computed(() => {
   };
 });
 const username = ref('');
+const bindWechat = ref(false);
 const userInfo = ref({});
 const route = useRoute();
 const router = useRouter();
@@ -168,6 +170,7 @@ const getUserInfo = () => {
     .then((result) => {
       if (result.errcode == 0) {
         alreadyLogin.value = true;
+        bindWechat.value = !!result.data.unionid;
         username.value = result.data.name;
         userInfo.value = result.data;
       } else {

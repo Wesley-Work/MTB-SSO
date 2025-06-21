@@ -5,10 +5,14 @@ import { defineComponent, onMounted, onUnmounted, ref, toRefs, type PropType } f
 
 import './styles/scan.scss';
 import { CheckCircleIcon, ErrorCircleIcon, ErrorIcon, LoadingIcon } from 'tdesign-icons-vue-next';
+import { componentProps } from '../../../props';
+import { networkPortalVerify, returnSourceSystem } from './utils';
+import { useRoute } from 'vue-router';
 
 type MiniprogramCodeStatus = 'active' | 'expired' | 'loading' | 'scanned' | 'cancel' | 'confirm' | 'error';
 
 interface MiniprogramCodeResponse {
+  data: MiniprogramLoginResponse;
   img_base64: string;
   createTime: number;
   validity: number;
@@ -19,22 +23,42 @@ interface MiniprogramCodeResponse {
   uid: string; //绑定扫码用
 }
 
+interface MiniprogramLoginResponse {
+  class: string;
+  code: string;
+  group: number;
+  id: number;
+  name: string;
+  token: string;
+  unionid: string;
+}
+
 export default defineComponent({
   name: 'MiniprogramCode',
   props: {
     type: {
-      type: String as PropType<'login' | 'bind'>,
+      type: String as PropType<'login' | 'bind' | 'auth'>,
       default: 'login',
     },
+    uid: {
+      type: String,
+      default: undefined,
+    },
+    ...componentProps,
   },
   setup(props) {
-    const { type } = toRefs(props);
+    const { type, uid, param: componentProps } = toRefs(props);
+
+    const route = useRoute();
+
     const api = wxApi;
     const status = ref<MiniprogramCodeStatus>('loading');
+    const customErrorContent = ref('');
     const ticket = ref('');
     const miniprogramCodeImgBase64 = ref('');
     const checkTicketLock = ref(false);
     const ticketCheckInterval = ref<NodeJS.Timeout>();
+    const isOut = ref(false);
 
     // 处理状态
     // 关于ticket码的Status值定义说明：
@@ -42,9 +66,9 @@ export default defineComponent({
     const handleStatus = (status: number) => {
       switch (status) {
         case 401:
-          return 'active';
-        case 402:
           return 'scanned';
+        case 402:
+          return 'cancel';
         case 403:
           return 'confirm';
         case 404:
@@ -58,6 +82,10 @@ export default defineComponent({
 
     const checkTicket = () => {
       if (checkTicketLock.value) {
+        return;
+      }
+      if (isOut.value) {
+        cancelCheckTicket();
         return;
       }
       if (ticket.value === '') {
@@ -77,20 +105,58 @@ export default defineComponent({
           if (res.errcode !== 0) {
             cancelCheckTicket();
             ticket.value = '';
-            getMiniprogramCode();
+            status.value = 'error';
+            customErrorContent.value = res.errmsg;
             return;
           }
           const { data } = res as { data: MiniprogramCodeResponse };
           const { status: codeStatus } = data;
           if (codeStatus === 405) {
             ticket.value = '';
+            cancelCheckTicket();
+          }
+          // 已登录
+          if (codeStatus === 403) {
+            if (type.value === 'login') {
+              MessagePlugin.success('登录成功，请稍后...');
+              const { token, code, name } = data?.data;
+              localStorage.setItem('loginStatus', 'true');
+              localStorage.setItem('token', token);
+              // 返回源系统
+              if (componentProps.value.backUrl) {
+                setTimeout(() => {
+                  returnSourceSystem(componentProps.value.backUrl, token, code, name);
+                }, 1500);
+                return;
+              }
+              // 上网认证
+              else if (componentProps.value.actionType === 'networkportal') {
+                const { timestamp, mac, user_ip } = route.query as { [k: string]: string };
+                networkPortalVerify(token, user_ip, mac, timestamp);
+              }
+              // 默认刷新
+              else {
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              }
+            } else if (type.value === 'auth') {
+              MessagePlugin.success('绑定成功，请等待...');
+              setTimeout(() => {
+                location.reload();
+              }, 1200);
+            }
+            cancelCheckTicket();
           }
           status.value = handleStatus(codeStatus);
+          if ((res.data as any)?.errmsg) {
+            customErrorContent.value = (res.data as any)?.errmsg;
+          }
         },
         error: () => {
           cancelCheckTicket();
           ticket.value = '';
-          getMiniprogramCode();
+          status.value = 'error';
         },
         complete: () => {
           checkTicketLock.value = false;
@@ -110,6 +176,7 @@ export default defineComponent({
     };
 
     const getMiniprogramCode = () => {
+      customErrorContent.value = '';
       // 有ticket，应检查当前ticket是否有效，无效再进行获取
       if (ticket.value !== '') {
         startCheckTicket();
@@ -123,10 +190,13 @@ export default defineComponent({
         methods: 'POST',
         data: {
           type: type.value,
+          ...(uid.value !== undefined ? { uid: uid.value } : {}),
         },
         success: (res) => {
           if (res.errcode !== 0) {
             MessagePlugin.error(res.errmsg);
+            status.value = 'error';
+            customErrorContent.value = res.errmsg;
             return;
           }
           const { data } = res as { data: MiniprogramCodeResponse };
@@ -135,6 +205,9 @@ export default defineComponent({
           ticket.value = codeTicket;
           miniprogramCodeImgBase64.value = img_base64;
           startCheckTicket();
+        },
+        error: () => {
+          status.value = 'error';
         },
       });
     };
@@ -163,15 +236,25 @@ export default defineComponent({
       }
 
       const text =
-        status.value === 'scanned'
-          ? '已扫描，请在小程序上确认登录'
-          : status.value === 'cancel'
-          ? '您操作取消，请重新获取小程序码'
-          : status.value === 'expired'
-          ? '当前小程码已过期，请重新获取'
-          : status.value === 'error'
-          ? '遇到错误，请刷新页面后重试！'
-          : '';
+        status.value === 'scanned' ? (
+          '已扫描，请在小程序上确认'
+        ) : status.value === 'cancel' ? (
+          '您操作取消，请重新获取小程序码'
+        ) : status.value === 'expired' ? (
+          <span>
+            当前小程码已过期
+            <br />
+            请点击按钮重新获取
+          </span>
+        ) : status.value === 'error' ? (
+          customErrorContent.value !== '' ? (
+            customErrorContent.value
+          ) : (
+            '遇到错误，请刷新页面后重试！'
+          )
+        ) : (
+          ''
+        );
       const reTryBtn = (
         <svg fill="none" viewBox="0 0 18 18" onClick={getMiniprogramCode}>
           <path
@@ -223,18 +306,20 @@ export default defineComponent({
     };
 
     onMounted(() => {
+      isOut.value = false;
       getMiniprogramCode();
     });
 
     onUnmounted(() => {
       clearInterval(ticketCheckInterval.value);
+      isOut.value = true;
     });
 
     return () => {
       return (
         <div class="scan-login-wrapper">
           {renderCode()}
-          <div class="scan-login-wrapper--tips">使用「微信 扫一扫」扫码登录</div>
+          <div class="scan-login-wrapper--tips">使用「微信 扫一扫」扫码{type.value === 'login' ? '登录' : '绑定'}</div>
         </div>
       );
     };

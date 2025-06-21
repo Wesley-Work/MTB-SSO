@@ -15,7 +15,7 @@ export default defineComponent({
     ...componentProps,
   },
   setup(props) {
-    const { alreadyLogin, param: propsRef, userName, userInfo } = toRefs(props);
+    const { alreadyLogin, param: propsRef, userName, userInfo, bindWechat } = toRefs(props);
 
     const route = useRoute();
     const router = useRouter();
@@ -87,19 +87,25 @@ export default defineComponent({
     };
 
     const renderViewHeader = () => {
+      const getSubComponentTitle = () => {
+        if (alreadyLogin.value) {
+          return (
+            <span>
+              Hi，{userName.value ?? ''}，{judgmentTime()}好 👋！
+            </span>
+          );
+        } else if (isScanLogin.value) {
+          return <span>扫码登录</span>;
+        } else {
+          return isNetworkPortal.value ? <span>上网认证-密码登录</span> : <span>密码登录</span>;
+        }
+      };
       return (
         <div class="header">
           <div class="sign-in-tab">
             <ul class="account-sign-in">
               <li data-type="account" style="margin-bottom: 2px">
-                {isNetworkPortal.value && <span>上网认证-密码登录</span>}
-                {alreadyLogin.value && (
-                  <span>
-                    Hi，{userName.value ?? ''}，{judgmentTime()}好 👋！
-                  </span>
-                )}
-                {isScanLogin.value && <span>扫码登录</span>}
-                {!isNetworkPortal.value && !alreadyLogin.value && !isScanLogin.value && <span>密码登录</span>}
+                {getSubComponentTitle()}
               </li>
             </ul>
           </div>
@@ -111,13 +117,30 @@ export default defineComponent({
     };
 
     const renderViewComponent = () => {
+      const generalSubComponentsProps = {
+        bindWechat: bindWechat.value,
+        param: { ...propsRef.value },
+      };
       const subComponentsProps = {
         isNetworkPortal: isNetworkPortal.value,
         networkParamsIsReady: networkParamsIsReady.value.ready,
         setFormErrorStatus: setFormErrorStatus,
         userName: userName.value,
         userInfo: userInfo.value,
-        ...propsRef.value,
+        ...generalSubComponentsProps,
+      };
+      // 子组件优先级： LoginWelcome > LoginScan > LoginForm
+      // LoginWelcome: alreadyLogin === true
+      // LoginScan: ScanLogin === true
+      // LoginForm: !ScanLogin === true
+      const getSubComponent = () => {
+        if (alreadyLogin.value) {
+          return <LoginWelcome {...subComponentsProps}></LoginWelcome>;
+        } else if (isScanLogin.value) {
+          return <LoginScan {...generalSubComponentsProps}></LoginScan>;
+        } else {
+          return <LoginForm {...subComponentsProps}></LoginForm>;
+        }
       };
       return (
         <>
@@ -134,9 +157,7 @@ export default defineComponent({
               </div>
             )}
           </div>
-          {!alreadyLogin.value && !isScanLogin.value && <LoginForm {...subComponentsProps}></LoginForm>}
-          {alreadyLogin.value && !isScanLogin.value && <LoginWelcome {...subComponentsProps}></LoginWelcome>}
-          {isScanLogin.value && <LoginScan></LoginScan>}
+          {getSubComponent()}
         </>
       );
     };

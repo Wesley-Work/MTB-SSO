@@ -9,6 +9,10 @@ export const componentProps = {
     type: Boolean,
     default: false,
   },
+  bindWechat: {
+    type: Boolean,
+    default: false,
+  },
   userName: {
     type: String,
     default: '',
