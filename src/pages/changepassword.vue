@@ -2,9 +2,7 @@
   <div class="session-container sign-in-box">
     <div class="session">
       <!---->
-      <div class="session-logo">
-        <img src="../assets/fhzsn_white.png" />
-      </div>
+      <HeadLogo />
       <!---->
       <div class="session-box">
         <div class="session-box-inner">
@@ -178,6 +176,8 @@ import { api } from '../config';
 import { logout } from '../utils';
 import type { LoginFormErrorStatus } from '../types';
 import { useRouter } from 'vue-router';
+
+import HeadLogo from '@/components/headLogo.tsx';
 
 const router = useRouter();
 

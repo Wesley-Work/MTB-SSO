@@ -2,11 +2,9 @@
   <div class="session-container sign-in-box">
     <div class="session">
       <!---->
-      <div class="session-logo">
-        <img src="../../assets/fhzsn_white.png" />
-      </div>
+      <HeadLogo />
       <!---->
-      <loginView v-bind="props" />
+      <LoginView v-bind="props" />
       <!---->
     </div>
   </div>
@@ -14,7 +12,8 @@
 
 <script setup lang="tsx">
 import { componentProps } from '../../props';
-import loginView from './components/loginView';
+import LoginView from './components/loginView';
+import HeadLogo from '@/components/headLogo.tsx';
 
 const props = defineProps(componentProps);
 </script>

@@ -1,6 +1,5 @@
 import { Fingerprint3Icon, KeyIcon, ScanIcon } from 'tdesign-icons-vue-next';
-import { MessagePlugin } from 'tdesign-vue-next';
-import { defineComponent, toRefs, ref, computed, reactive } from 'vue';
+import { defineComponent, toRefs, computed, reactive } from 'vue';
 import LoginWelcome from './loginWelcome';
 import LoginScan from './loginScan';
 import { componentProps } from '../../../props';

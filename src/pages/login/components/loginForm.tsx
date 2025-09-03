@@ -173,7 +173,9 @@ export default defineComponent({
 
                 <div class="sign-in-action">
                   <div class="sign-in__forget-password">
-                    <a href="/profile/password/forget">忘记帐号密码?</a>
+                    <a href="javascript:void(0)" onClick={() => MessagePlugin.warning('请联系管理员进行重置～')}>
+                      忘记帐号密码?
+                    </a>
                   </div>
                 </div>
               </div>

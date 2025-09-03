@@ -124,11 +124,19 @@ html body {
   margin: 100px auto;
   width: 580px;
   .session-logo {
+    user-select: none;
+
     img {
-      height: 78px;
       // height: 124px;
       margin: 0 auto;
       display: block;
+    }
+    img.mtb{
+      height: 124px;
+      margin-bottom: -10px;
+    }
+    img.fhzsn{
+      height: 58px;
     }
   }
 }
