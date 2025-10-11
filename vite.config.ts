@@ -11,5 +11,8 @@ export default defineConfig({
       '@': srcRootPath,
     },
   },
+  server: {
+    host: '0.0.0.0',
+  },
   plugins: [vue(), vueJsx()],
 });
