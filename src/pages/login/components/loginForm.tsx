@@ -44,6 +44,91 @@ export default defineComponent({
       }
     };
 
+    const showForceChangePasswordDialog = () => {
+      const pws = ref('');
+      const pws2 = ref('');
+      const inError = ref(false);
+      DialogPlugin({
+        header: '提示',
+        body: () => {
+          return (
+            <>
+              <t-space direction="vertical" size="small" style="width: 100%">
+                <span style="font: var(--td-font-title-small)">当前密码是初始密码，请修改密码！</span>
+                <t-space direction="vertical" size="small" style="width: 100%">
+                  <div>
+                    <span>新密码：</span>
+                    <t-input
+                      v-model={pws.value}
+                      placeholder="请输入新密码"
+                      status={inError.value ? 'error' : ''}
+                      onFocus={() => {
+                        inError.value = false;
+                      }}
+                    ></t-input>
+                  </div>
+                  <div>
+                    <span>确认密码：</span>
+                    <t-input
+                      v-model={pws2.value}
+                      placeholder="请再次输入新密码"
+                      status={inError.value ? 'error' : ''}
+                      onFocus={() => {
+                        inError.value = false;
+                      }}
+                    ></t-input>
+                  </div>
+                </t-space>
+              </t-space>
+            </>
+          );
+        },
+        cancelBtn: null,
+        confirmBtn: '确定',
+        closeBtn: false,
+        closeOnOverlayClick: false,
+        closeOnEscKeydown: false,
+        onConfirm: () => {
+          inError.value = false;
+          if (!pws.value || !pws2.value) {
+            MessagePlugin.error('需要输入内容');
+            inError.value = true;
+            return;
+          }
+          if (pws.value !== pws2.value) {
+            MessagePlugin.error('两次输入的密码不一致');
+            inError.value = true;
+            return;
+          }
+
+          fetch(api + '/force-change-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              TOKEN: localStorage.getItem('token') ?? '',
+            },
+            body: 'password=' + pws.value,
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (result.errcode == 0) {
+                MessagePlugin.success('修改密码成功！');
+              } else {
+                MessagePlugin.error('修改密码失败：' + result.errmsg);
+              }
+            })
+            .catch((error) => {
+              MessagePlugin.error('修改密码失败：' + error);
+            })
+            .finally(() => {
+              setTimeout(() => {
+                location.reload();
+              }, 1200);
+            });
+        },
+      });
+    };
+
     /**
      * @login
      * @登录
@@ -78,6 +163,10 @@ export default defineComponent({
               const userData = result.data;
               localStorage.setItem('loginStatus', 'true');
               localStorage.setItem('token', result.data.token);
+              if (userData.isDefaultPws === true) {
+                showForceChangePasswordDialog();
+                return;
+              }
               // 返回源系统
               if (componentProps.value.backUrl) {
                 MessagePlugin.success('登录成功，请稍后...');
