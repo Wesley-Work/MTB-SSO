@@ -38,7 +38,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    
+    "paths": {
+      "@/*": ["/src/*"]
+    }
   },
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "vite.config.ts", "*.d.ts", "src/types/**/*.ts"],

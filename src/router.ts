@@ -4,7 +4,7 @@ import type { RouteRecordRaw } from 'vue-router';
 // import RenderComponents from './components/index.tsx';
 
 const routercfg: RouteRecordRaw[] = [
-  { path: '/login', component: () => import('./pages/login-new.vue') },
+  { path: '/login', component: () => import('./pages/login/login.vue') },
   { path: '/forget', component: () => import('./pages/forget-new.vue') },
   { path: '/change-password', component: () => import('./pages/changepassword.vue') },
   {

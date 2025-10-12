@@ -8,6 +8,7 @@ const config = {
   api: 'https://sso-api.mtb.wesley.net.cn/v2/OAuth',
   networkPortalApi: 'http://192.168.67.14:50001/networkPortal',
   wxApi: 'https://sso-api.mtb.wesley.net.cn/v2/WxAuth',
+  // jump_defaultURL: 'http://10.3.146.12/system',
   jump_defaultURL: 'https://oa-mtb.wesley.net.cn/',
 };
 

@@ -1,0 +1,71 @@
+.scan-login-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 38px 0 0px;
+
+  .scan-login-wrapper--img {
+    position: relative;
+    width: 198px;
+    height: 198px;
+    background-color: var(--td-bg-color-component-disabled);
+    border-radius: 4px;
+
+    img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .scan-login-wrapper--img__status {
+      position: absolute;
+      top: 0px;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(246, 246, 246, 0.8);
+      border-radius: 4px;
+
+      .scan-login-wrapper--img__status-inner {
+        display: flex;
+        align-items: center;
+        width: 75%;
+        text-align: center;
+        gap: 6px;
+        font: var(--td-font-title-medium);
+      }
+
+      .scan-login-wrapper--img__status-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .t-icon-loading {
+          color: var(--td-text-color-secondary);
+        }
+
+        &.is-btn {
+          border-radius: 4px;
+          transition: 0.28s background-color ease-in-out;
+
+          &:hover {
+            background-color: rgb(200, 200, 200, 0.5);
+          }
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+  }
+
+  .scan-login-wrapper--tips {
+    font: var(--td-font-title-medium);
+  }
+}
