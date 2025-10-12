@@ -1,4 +1,7 @@
 
+## 🌈 3.1.0 `2025-10-12` 
+### 🚀 Features
+- `Login`: 支持使用微信登录 @Wesley-0808 ([#14](https://github.com/Wesley-Work/MTB-SSO/pull/14))
 ## 🌈 3.0.0 `2025-05-27` 
 ### 🚀 Features
 - `Login`: 新的认证、登录界面 @Wesley-0808 ([#11](https://github.com/Wesley-Work/MTB-SSO/pull/11))
