@@ -121,7 +121,7 @@ html body {
 }
 
 .session {
-  margin: 100px auto;
+  margin: 84px auto 100px auto;
   width: 580px;
   .session-logo {
     user-select: none;
@@ -210,7 +210,7 @@ html body {
   }
 
   .provider-separator {
-    margin-top: 30px;
+    margin-top: 18px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -262,9 +262,9 @@ html body {
 }
 
 .session-container .session-box {
-  margin-top: 25px;
+  margin-top: 18px;
   background-color: #fff;
-  padding: 45px;
+  padding: 38px 45px 25px 45px;
   border-radius: 5px;
 
   .session-box-inner {
