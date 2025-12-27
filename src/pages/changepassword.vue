@@ -12,9 +12,10 @@
                 <div class="header">
                   <div class="sign-in-tab">
                     <ul class="account-sign-in">
-                      <li data-type="account" style="margin-bottom: 2px">
+                      <li v-if="urlQuery.from != 'wecom'" data-type="account" style="margin-bottom: 2px">
                         修改密码 [<t-link theme="primary" @click="backIndex">返回登录</t-link>]
                       </li>
+                      <li v-else data-type="account" style="margin-bottom: 2px">修改密码</li>
                     </ul>
                   </div>
                 </div>
@@ -55,7 +56,7 @@
                             </svg>
                           </div>
                           <div class="mtb-input-label" style="text-align: center; margin-top: 18px; font-size: 18px">
-                            验证失败，请重新登录
+                            {{ state }}
                           </div>
                           <!---->
                         </div>
@@ -135,7 +136,7 @@
                       <!---->
                       <div class="action" style="display: flex; flex-direction: column; gap: 4px">
                         <t-button
-                          v-if="current !== 1"
+                          v-if="current !== 1 && urlQuery.from != 'wecom'"
                           block
                           size="large"
                           @click="() => (!checkOk ? backIndex() : lastStep())"
@@ -170,16 +171,18 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { MessagePlugin, type FormProps } from 'tdesign-vue-next';
 import { api } from '../config';
 import { logout } from '../utils';
 import type { LoginFormErrorStatus } from '../types';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import HeadLogo from '@/components/headLogo.tsx';
+import { useRequest } from '@/utils/request';
 
 const router = useRouter();
+const route = useRoute();
 
 const errorStatus = reactive<LoginFormErrorStatus>({
   both: {
@@ -205,6 +208,9 @@ const token = ref('');
 const state = ref('安全');
 const checking = ref(true);
 const checkOk = ref(false);
+const urlQuery = computed(() => {
+  return route.query;
+});
 const formData = reactive({
   account: '',
   oldPws: '',
@@ -251,6 +257,14 @@ const lastStep = () => {
   current.value -= 1;
 };
 
+const refreshPage = () => {
+  if (urlQuery.value.from == 'wecom') {
+    router.replace('/login');
+  } else {
+    logout();
+  }
+};
+
 const submit: FormProps['onSubmit'] = ({ validateResult, firstError }) => {
   resetErrorStatus();
   if (validateResult === true) {
@@ -266,7 +280,7 @@ const submit: FormProps['onSubmit'] = ({ validateResult, firstError }) => {
       if (result.errcode == 0) {
         MessagePlugin.success('更改成功，请重新登录！');
         setTimeout(() => {
-          logout();
+          refreshPage();
         }, 1500);
         return;
       } else if (result.errcode == -10001) {
@@ -294,8 +308,7 @@ const submit: FormProps['onSubmit'] = ({ validateResult, firstError }) => {
   }
 };
 
-onMounted(() => {
-  checking.value = true;
+const checkLoginStatus = () => {
   var loginStatus = localStorage.getItem('loginStatus');
   if (loginStatus == 'true') {
     console.info('检测到了登录态信息，正在判断登录态是否有效。');
@@ -336,6 +349,59 @@ onMounted(() => {
       checkOk.value = false;
     }, 1800);
   }
+};
+
+const getWecomLoginInfo = () => {
+  const code = urlQuery.value.code;
+  if (!code) {
+    console.error('缺少code参数，无法通过企业微信OAuth认证获取用户信息');
+    checking.value = false;
+    state.value = '缺少code参数';
+    checkOk.value = false;
+    return;
+  }
+  console.info('正在通过企业微信OAuth认证获取用户信息');
+  useRequest({
+    url: '/wecom/login',
+    methods: 'POST',
+    data: {
+      code,
+      appName: 'SSO-CHGPWS',
+    },
+  })
+    .then((result) => {
+      const res = JSON.parse(result);
+      if (res.errcode == 0) {
+        token.value = res.data.token;
+        state.value = '验证成功';
+        checkOk.value = true;
+      } else if (res.errcode == -20001) {
+        state.value = '该企业微信账号无绑定用户信息';
+        checkOk.value = false;
+      } else {
+        state.value = '获取用户信息失败，请尝试在重新进入应用';
+        checkOk.value = false;
+      }
+      checking.value = false;
+    })
+    .catch((err) => {
+      console.error('请求错误', err);
+      state.value = '获取用户信息失败，请尝试在重新进入应用';
+      checking.value = false;
+      checkOk.value = false;
+    });
+};
+
+onMounted(() => {
+  checking.value = true;
+  // 来自企业微信应用的改密码请求，不使用默认的登录态检查
+  if (urlQuery.value.from == 'wecom') {
+    console.info('来自企业微信应用的改密码请求，跳过登录态检查');
+    state.value = '信息';
+    getWecomLoginInfo();
+    return;
+  }
+  checkLoginStatus();
 });
 </script>
 
