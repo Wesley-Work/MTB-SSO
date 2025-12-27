@@ -7,7 +7,7 @@ import { toOA } from './utils';
 import { subComponentsProps } from './props';
 import useRequest from '../../../utils/request';
 import { wxApi } from '../../../config';
-import MiniprogramCode from './miniprogramCode';
+import MiniprogramCode from './scan/miniprogramCode';
 
 export default defineComponent({
   name: 'LoginWelcome',

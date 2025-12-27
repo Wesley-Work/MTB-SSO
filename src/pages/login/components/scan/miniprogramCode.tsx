@@ -1,12 +1,12 @@
 import { MessagePlugin } from 'tdesign-vue-next';
-import { wxApi } from '../../../config';
-import useRequest from '../../../utils/request';
+import { wxApi } from '../../../../config';
+import useRequest from '../../../../utils/request';
 import { defineComponent, onMounted, onUnmounted, ref, toRefs, type PropType } from 'vue';
 
-import './styles/scan.scss';
+import '../styles/scan.scss';
 import { CheckCircleIcon, ErrorCircleIcon, ErrorIcon, LoadingIcon } from 'tdesign-icons-vue-next';
-import { componentProps } from '../../../props';
-import { networkPortalVerify, returnSourceSystem } from './utils';
+import { componentProps } from '../../../../props';
+import { networkPortalVerify, returnSourceSystem } from '../utils';
 import { useRoute } from 'vue-router';
 
 type MiniprogramCodeStatus = 'active' | 'expired' | 'loading' | 'scanned' | 'cancel' | 'confirm' | 'error';

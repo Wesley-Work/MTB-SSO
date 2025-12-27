@@ -86,16 +86,17 @@ const loadParam = () => {
     /**
      * backUrl: 登录后跳转的页面
      * strongAuth: 是否强验证
-     * actionType: 登录类型，login为登录，logout为登出，NetworkPortal为上网验证
-     * loginType: 登录方式，account为账号密码登录，ticket为Ticket登录
+     * actionType: 登录类型，login为登录，logout为登出，NetworkPortal为上网验证，change-password-Wecom为企业微信应用打开的：需要修改密码
+     * loginType: 登录方式，account为账号密码登录，ticket为Ticket登录，scan-miniprogram为小程序扫码登录，scan-wecom为企业微信扫描登录
+     * code: 企业微信通过OAuth认证后返回的code，换取用户信息的code
      */
-    // 特定页面下，如果没有actionType参数，则加上actionType=login并刷新页面
     const actionTypeLowerCase = param.value.actionType;
-    const needPushPage = ['/', '/login'];
     const paramsData = {
       ...route.query,
       ...getURLParams(),
     } as { [x: string]: string };
+    // 特定页面下，如果没有actionType参数，则加上actionType=login并刷新页面
+    const needPushPage = ['/', '/login'];
     if (!actionTypeLowerCase && needPushPage.includes(route.path)) {
       const newParams = {
         ...paramsData,
@@ -110,6 +111,11 @@ const loadParam = () => {
     }
     // 改密码
     if (actionTypeLowerCase === 'change-password') {
+      location.replace('/#/change-password?' + new URLSearchParams(paramsData).toString());
+    }
+    // 改密码（企业微信进入的）
+    if (actionTypeLowerCase === 'change-password-wecom') {
+      paramsData['from'] = 'wecom';
       location.replace('/#/change-password?' + new URLSearchParams(paramsData).toString());
     }
     // 改上网设备
