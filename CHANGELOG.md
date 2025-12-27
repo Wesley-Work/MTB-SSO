@@ -1,4 +1,7 @@
 
+## 🌈 3.2.0 `2025-12-27` 
+### 🚀 Features
+- `Wecom`: 支持企业微信登录，支持在企业微信「工作台-应用」修改系统密码 @Wesley-0808 ([#16](https://github.com/Wesley-Work/MTB-SSO/pull/16))
 ## 🌈 3.1.0 `2025-10-12` 
 ### 🚀 Features
 - `Login`: 支持使用微信登录 @Wesley-0808 ([#14](https://github.com/Wesley-Work/MTB-SSO/pull/14))
