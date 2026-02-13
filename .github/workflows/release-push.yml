@@ -1,0 +1,213 @@
+name: Release Push
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+jobs:
+  create-release:
+    if: github.event.pull_request.merged && github.event.pull_request && startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # 设置 pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      # 设置 Node.js 环境，版本为 18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 获取 pnpm 的存储目录路径
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      # 设置 pnpm 缓存
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          # 缓存路径
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          # 缓存键
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          # 恢复缓存的备用键
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: get version
+        id: get-current-version
+        run: |
+          data=$(cat package.json)
+          re="\"version\": \"([^\"]*)\""
+          [[ $data =~ $re ]]
+          echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+
+      - name: Get latest release PR
+        id: get-pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const version = "${{ steps.get-current-version.outputs.version }}";
+            console.log(`Looking for release PR for version: ${version}`);
+
+            // 查找以 'release/' 开头的分支的最近合并的PR
+            const query = `is:pr is:merged head:release/${version} base:develop`;
+            const searchResult = await github.rest.search.issuesAndPullRequests({
+              q: query,
+              sort: 'updated',
+              order: 'desc',
+              per_page: 1
+            });
+
+            if (searchResult.data.items.length === 0) {
+              console.log('No matching PR found');
+              return {
+                pr_number: null,
+                changelog: null
+              };
+            }
+
+            const pr = searchResult.data.items[0];
+            console.log(`Found PR #${pr.number}: ${pr.title}`);
+
+            // 获取PR评论，查找changelog
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number
+            });
+
+            let changelog = null;
+            for (const comment of comments.data) {
+              if (comment.body.startsWith('## 🌈 ')) {
+                changelog = comment.body;
+                break;
+              }
+            }
+
+            return {
+              pr_number: pr.number,
+              changelog: changelog
+            };
+
+      - name: Read CHANGELOG.md
+        id: read-changelog
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const version = "${{ steps.get-current-version.outputs.version }}"
+
+            try {
+              const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+              const versionHeader = `## 🌈 ${version}`;
+              const startIndex = changelog.indexOf(versionHeader);
+
+              if (startIndex === -1) {
+                console.log(`Version ${version} not found in CHANGELOG.md`);
+                console.log(changelog)
+                core.setOutput('content', null);
+                return;
+              }
+
+              const nextVersionIndex = changelog.indexOf('## 🌈', startIndex + 2);
+              const releaseNotes = nextVersionIndex === -1
+                ? changelog.slice(startIndex)
+                : changelog.slice(startIndex, nextVersionIndex);
+
+              core.info(`Release Notes for ${version}:`);
+              core.info(releaseNotes);
+
+              core.setOutput('content', releaseNotes.trim());
+              return;
+            } catch (error) {
+              console.error(`Error reading CHANGELOG.md: ${error}`);
+              core.setOutput('content', null);
+              return;
+            }
+
+      # 安装依赖
+      - run: pnpm install --no-frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Create zip
+        run: |
+          VERSION=$(echo "${{ steps.get-current-version.outputs.version }}" | sed 's/\./_/g' | sed 's/-/_/g')
+          cd dist && zip -r ../MTB-SSO-BuildPackage-$VERSION.zip *
+
+      - name: Create Release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const version = "${{ steps.get-current-version.outputs.version }}"
+
+            // 优先使用PR评论中的changelog，如果没有则使用CHANGELOG.md中的内容
+            let releaseBody = ${{ toJSON(steps.get-pr.outputs.changelog) }};
+            if (!releaseBody) {
+              releaseBody = ${{ toJSON(steps.read-changelog.outputs.content) }};
+              console.warn('use changelog from CHANGELOG.md')
+            }
+
+            // 如果仍然没有changelog，使用默认消息
+            if (!releaseBody) {
+              releaseBody = `Release ${version}`;
+              console.warn('use default release body')
+            }
+
+            // 判断是否为预发布版本（alpha或beta）
+            const isPrerelease = version.includes('-alpha.') || version.includes('-beta.');
+            core.info(`Is pre-release: ${isPrerelease}`);
+
+            // 创建release
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: version,
+              name: `Release ${version}`,
+              body: releaseBody,
+              draft: false,
+              prerelease: isPrerelease
+            });
+
+            // 上传构建包
+            const fs = require('fs');
+
+            const finalVersion = version.replace(/[.\-]/g, '_');
+            const assets = [
+              `MTB-SSO-BuildPackage-${finalVersion}.zip`
+            ];
+
+            for (const asset of assets) {
+              if (fs.existsSync(asset)) {
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.data.id,
+                  name: asset,
+                  data: fs.readFileSync(asset)
+                });
+              } else {
+                core.warning(`📎 Asset not found: ${asset}`);
+              }
+            }
+
+            console.log(`Created release for ${version} with assets`);
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f MTB-SSO-BuildPackage-*.zip

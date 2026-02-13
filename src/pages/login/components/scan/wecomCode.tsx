@@ -18,7 +18,7 @@ export default defineComponent({
           login_type: wecomSdk.WWLoginType.corpApp,
           appid: 'wwfb90560de2515879',
           agentid: '1000011',
-          redirect_uri: 'https://10.1.0.17:5173',
+          redirect_uri: 'https://sso.sdzzmtb.cn',
           redirect_type: wecomSdk.WWLoginRedirectType.callback,
           panel_size: wecomSdk.WWLoginPanelSizeType.small,
         },
