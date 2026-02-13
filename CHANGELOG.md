@@ -1,5 +1,5 @@
 
-## 🌈 3.2.1 `2026-02-13` 
+## 🌈 3.2.2 `2026-02-13` 
 ### 🐞 Bug Fixes
 - 修复企业微信登录，无法加载二维码的问题 @Wesley-0808 ([#18](https://github.com/Wesley-Work/MTB-SSO/pull/18))
 ## 🌈 3.2.0 `2025-12-27` 
@@ -32,4 +32,5 @@
 - feat(Login): OA侧对接优化
 - feat(Login): API对接优化
 - break(Login): TOKEN相关逻辑优化
+
 
